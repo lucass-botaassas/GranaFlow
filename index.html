@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0B0F19">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="GranaFlow - Controle Financeiro Pessoal, Eventos e Investimentos">
+  <title>GranaFlow</title>
+
+  <!-- Manifesto PWA e APK -->
+  <link rel="manifest" href="./manifest.json">
+
+  <!-- Estilos Locais (Sem CDNs) -->
+  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="./css/responsive.css">
+
+  <!-- Scripts Locais (Carregamento defer na ordem de dependências) -->
+  <script defer src="./js/database.js"></script>
+  <script defer src="./js/finance.js"></script>
+  <script defer src="./js/events.js"></script>
+  <script defer src="./js/expenses.js"></script>
+  <script defer src="./js/calendar.js"></script>
+  <script defer src="./js/investments.js"></script>
+  <script defer src="./js/reports.js"></script>
+  <script defer src="./js/backup.js"></script>
+  <script defer src="./js/app.js"></script>
+</head>
+<body>
+
+  <!-- ======================================================================
+       HEADER PRINCIPAL
+       ====================================================================== -->
+  <header class="app-header">
+    <div class="brand-wrapper" onclick="App.switchScreen('dashboard')" style="cursor: pointer;">
+      <img src="./assets/logo.png" alt="GranaFlow Logo" class="brand-logo-img">
+      <h1 class="brand-title" id="header_title">GranaFlow</h1>
+    </div>
+    <div class="header-actions">
+      <!-- Alternar Visibilidade dos Valores -->
+      <button type="button" class="btn-icon-header" id="btn_toggle_visibility" onclick="App.toggleValuesVisibility()" title="Ocultar/Exibir Valores">
+        👁️
+      </button>
+      <!-- Relatórios Rápidos -->
+      <button type="button" class="btn-icon-header" onclick="App.switchScreen('reports')" title="Relatórios">
+        📊
+      </button>
+      <!-- Meus Backups & Configurações -->
+      <button type="button" class="btn-icon-header" onclick="App.switchScreen('backup')" title="Meus Backups">
+        💾
+      </button>
+      <!-- Notificações / Alertas com Badge -->
+      <button type="button" class="btn-icon-header" onclick="App.switchScreen('calendar')" title="Alertas e Agenda">
+        🔔
+        <span class="badge-dot" id="header_notification_badge"></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ======================================================================
+       CONTEÚDO PRINCIPAL (TELAS)
+       ====================================================================== -->
+  <main class="app-content">
+
+    <!-- --------------------------------------------------------------------
+         1. TELA INICIAL (DASHBOARD)
+         -------------------------------------------------------------------- -->
+    <section id="screen_dashboard" class="screen-view active">
+      <!-- Hero: Saldo em Conta -->
+      <div class="hero-balance-card">
+        <div class="hero-balance-label">
+          <span>SALDO TOTAL EM CONTA</span>
+          <span style="font-size: 0.72rem; color: #10B981; font-weight: 600;">✓ Atualizado</span>
+        </div>
+        <div class="hero-balance-amount" id="dash_account_balance">R$ 0,00</div>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn btn-sm btn-primary" style="flex: 1;" onclick="App.openModal('modal_new_event')">
+            + Nova Receita / Festa
+          </button>
+          <button type="button" class="btn btn-sm btn-danger-outline" style="flex: 1;" onclick="App.openModal('modal_new_expense')">
+            - Novo Gasto
+          </button>
+        </div>
+      </div>
+
+      <!-- CARD DESTACADO: QUANTO POSSO GASTAR? -->
+      <div class="safe-spend-card">
+        <div class="safe-spend-header">
+          <span class="safe-spend-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            QUANTO POSSO GASTAR?
+          </span>
+          <span style="font-size: 0.7rem; color: #38BDF8; font-weight: 700;">LIVRE</span>
+        </div>
+        <div class="safe-spend-value" id="dash_safe_spend_amount">R$ 0,00</div>
+        <div class="safe-spend-formula">
+          <strong>Regra de Proteção:</strong> Saldo em Conta <em>menos</em> Contas Pendentes do Mês. Valores ainda a receber não são contabilizados como dinheiro disponível.
+        </div>
+      </div>
+
+      <!-- Grid de Métricas Principais -->
+      <div class="metrics-grid">
+        <div class="metric-box">
+          <span class="metric-label">Recebido no Mês</span>
+          <span class="metric-value text-success" id="dash_received_month">R$ 0,00</span>
+        </div>
+        <div class="metric-box">
+          <span class="metric-label">Ainda a Receber</span>
+          <span class="metric-value text-warning" id="dash_pending_month">R$ 0,00</span>
+        </div>
+        <div class="metric-box">
+          <span class="metric-label">Despesas Pagas</span>
+          <span class="metric-value text-danger" id="dash_expenses_paid_month">R$ 0,00</span>
+        </div>
+        <div class="metric-box">
+          <span class="metric-label">Despesas Pendentes</span>
+          <span class="metric-value text-warning" id="dash_expenses_pending_month">R$ 0,00</span>
+        </div>
+        <div class="metric-box">
+          <span class="metric-label">Reservado p/ Metas</span>
+          <span class="metric-value text-purple" id="dash_goals_reserved">R$ 0,00</span>
+        </div>
+        <div class="metric-box">
+          <span class="metric-label">Total Investido</span>
+          <span class="metric-value text-info" id="dash_total_invested">R$ 0,00</span>
+        </div>
+        <div class="metric-box" style="grid-column: span 2;">
+          <span class="metric-label">Patrimônio Líquido Total Registrado</span>
+          <span class="metric-value text-success" id="dash_net_worth" style="font-size: 1.25rem;">R$ 0,00</span>
+        </div>
+      </div>
+
+      <!-- Gráfico Resumo -->
+      <div class="card">
+        <div class="card-title">
+          <span>Resumo Visual</span>
+          <span style="font-size: 0.72rem; color: var(--text-muted);">Mês Corrente</span>
+        </div>
+        <canvas id="dash_overview_chart" class="native-chart"></canvas>
+      </div>
+
+      <!-- Seção: Metas Financeiras (Objetivos) -->
+      <div class="card">
+        <div class="card-title">
+          <span>🎯 Metas Financeiras</span>
+          <button type="button" class="btn btn-sm btn-outline" onclick="App.openModal('modal_new_goal')">+ Criar Meta</button>
+        </div>
+        <div id="dash_goals_container">
+          <!-- Renderizado dinamicamente -->
+        </div>
+      </div>
+
+      <!-- Próximas Contas a Vencer -->
+      <div class="card">
+        <div class="card-title">
+          <span>Próximas Contas</span>
+          <button type="button" class="btn btn-sm btn-outline" onclick="App.switchScreen('expenses')">Ver Todas</button>
+        </div>
+        <div id="dash_upcoming_expenses_list">
+          <!-- Renderizado dinamicamente -->
+        </div>
+      </div>
+
+      <!-- Lembretes Urgentes -->
+      <div class="card">
+        <div class="card-title">
+          <span>Lembretes & Compromissos</span>
+          <button type="button" class="btn btn-sm btn-outline" onclick="App.switchScreen('calendar')">Abrir Agenda</button>
+        </div>
+        <div id="reminders_widget_container">
+          <!-- Renderizado dinamicamente -->
+        </div>
+      </div>
+    </section>
+
+    <!-- --------------------------------------------------------------------
+         2. TELA DE RECEITAS (TRABALHOS COM EVENTOS)
+         -------------------------------------------------------------------- -->
+    <section id="screen_events" class="screen-view">
+      <div class="subtabs-bar">
+        <button type="button" class="subtab-btn active" data-tab="tab_events_single" onclick="document.querySelectorAll('#screen_events .subtab-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active'); document.getElementById('tab_events_single').classList.add('active'); document.getElementById('tab_events_weekly').classList.remove('active');">
+          Festas & Eventos
+        </button>
+        <button type="button" class="subtab-btn" data-tab="tab_events_weekly" onclick="document.querySelectorAll('#screen_events .subtab-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active'); document.getElementById('tab_events_weekly').classList.add('active'); document.getElementById('tab_events_single').classList.remove('active');">
+          ⚡ Fechamento Semanal
+        </button>
+      </div>
+
+      <!-- Sub-aba 1: Lançamento e Lista de Eventos -->
+      <div id="tab_events_single" class="subtab-content active">
+        <div style="display: flex; gap: 8px; margin-bottom: 14px;">
+          <button type="button" class="btn btn-primary" style="flex: 1;" onclick="App.openModal('modal_new_event')">
+            + Registrar Festa / Evento
+          </button>
+          <button type="button" class="btn btn-outline" onclick="App.openModal('modal_config_event_prices')" title="Configurar Valores">
+            ⚙️ Valores
+          </button>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <select id="events_filter_status" class="form-control" onchange="EventsModule.renderEventsList()">
+            <option value="all">Todos os Status</option>
+            <option value="pending">Apenas A Receber (Pendentes)</option>
+            <option value="received">Apenas Recebidos</option>
+          </select>
+        </div>
+
+        <div id="events_list_container" class="items-list">
+          <!-- Lista de eventos renderizada via JS -->
+        </div>
+      </div>
+
+      <!-- Sub-aba 2: Fechamento da Semana (Essencial) -->
+      <div id="tab_events_weekly" class="subtab-content">
+        <div class="card card-highlight">
+          <div style="font-size: 0.82rem; color: #38BDF8; font-weight: 700; margin-bottom: 6px;">LANÇAMENTO RÁPIDO DA SEMANA</div>
+          <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 12px;">
+            Insira as festas trabalhadas em cada dia. O sistema calcula os totais automaticamente e permite finalizar a semana.
+          </p>
+
+          <div class="form-group">
+            <label class="form-label">Data de Referência da Semana:</label>
+            <input type="date" id="week_picker_date" class="form-control">
+          </div>
+
+          <!-- Grade de Lançamento por Dia -->
+          <div id="weekly_builder_days" class="week-closing-builder">
+            <!-- Renderizado dinamicamente via EventsModule.renderWeeklyBuilder() -->
+          </div>
+
+          <!-- Resumo em Tempo Real -->
+          <div class="week-summary-box">
+            <div class="summary-stat-line">
+              <span>Festas Normais:</span>
+              <strong id="summary_normal_count">0 (R$ 0,00)</strong>
+            </div>
+            <div class="summary-stat-line">
+              <span>Festas Solo:</span>
+              <strong id="summary_solo_count">0 (R$ 0,00)</strong>
+            </div>
+            <div class="summary-stat-line">
+              <span>Quantidade Total:</span>
+              <strong id="summary_total_count">0 festas</strong>
+            </div>
+            <div class="summary-stat-line total-line">
+              <span>Total a Receber:</span>
+              <span id="summary_total_amount">R$ 0,00</span>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn btn-outline" style="flex: 1;" onclick="EventsModule.resetWeeklyBuilder()">Limpar</button>
+            <button type="button" class="btn btn-success" style="flex: 2;" onclick="EventsModule.finalizeWeek()">
+              Finalizar Semana
+            </button>
+          </div>
+        </div>
+
+        <!-- Histórico de Fechamentos -->
+        <h3 style="font-size: 0.95rem; margin: 16px 0 10px 0; color: var(--text-main);">Histórico de Fechamentos Semanais</h3>
+        <div id="closures_history_container">
+          <!-- Renderizado dinamicamente -->
+        </div>
+      </div>
+    </section>
+
+    <!-- --------------------------------------------------------------------
+         3. TELA DE DESPESAS (GASTOS E CONTAS)
+         -------------------------------------------------------------------- -->
+    <section id="screen_expenses" class="screen-view">
+      <div class="subtabs-bar">
+        <button type="button" class="subtab-btn active" onclick="document.querySelectorAll('#screen_expenses .subtab-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active'); document.getElementById('tab_expenses_variable').classList.add('active'); document.getElementById('tab_expenses_fixed').classList.remove('active');">
+          Gastos do Dia a Dia
+        </button>
+        <button type="button" class="subtab-btn" onclick="document.querySelectorAll('#screen_expenses .subtab-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active'); document.getElementById('tab_expenses_fixed').classList.add('active'); document.getElementById('tab_expenses_variable').classList.remove('active');">
+          📌 Contas Fixas Recorrentes
+        </button>
+      </div>
+
+      <!-- Subtab Gastos Variáveis -->
+      <div id="tab_expenses_variable" class="subtab-content active">
+        <div style="display: flex; gap: 8px; margin-bottom: 14px;">
+          <button type="button" class="btn btn-primary" style="flex: 1;" onclick="App.openModal('modal_new_expense')">
+            + Lançar Despesa
+          </button>
+          <button type="button" class="btn btn-outline" onclick="App.openModal('modal_new_category')">
+            + Categoria
+          </button>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <select id="expense_filter_status" class="form-control" onchange="ExpensesModule.renderExpensesList()">
+              <option value="all">Todos os Status</option>
+              <option value="paid">Pagas</option>
+              <option value="pending">Pendentes</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <select id="expense_filter_category" class="form-control" onchange="ExpensesModule.renderExpensesList()">
+              <!-- Preenchido dinamicamente -->
+            </select>
+          </div>
+        </div>
+
+        <div id="expenses_list_container" class="items-list">
+          <!-- Lista de despesas -->
+        </div>
+      </div>
+
+      <!-- Subtab Contas Fixas -->
+      <div id="tab_expenses_fixed" class="subtab-content">
+        <div style="margin-bottom: 14px;">
+          <button type="button" class="btn btn-primary btn-block" onclick="App.openModal('modal_new_fixed_expense')">
+            + Adicionar Conta Fixa Recorrente
+          </button>
+        </div>
+
+        <div class="card">
+          <p style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.5;">
+            Contas cadastradas aqui (como aluguel, internet e academia) têm seus lançamentos do mês gerados automaticamente pelo GranaFlow sem qualquer duplicação.
+          </p>
+        </div>
+
+        <div id="fixed_expenses_list_container" class="items-list">
+          <!-- Lista de despesas fixas -->
+        </div>
+      </div>
+    </section>
+
+    <!-- --------------------------------------------------------------------
+         4. TELA DE AGENDA E CALENDÁRIO
+         -------------------------------------------------------------------- -->
+    <section id="screen_calendar" class="screen-view">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <button type="button" class="btn btn-primary" onclick="App.openModal('modal_new_task')">
+          + Novo Compromisso / Lembrete
+        </button>
+        <button type="button" class="btn btn-outline" onclick="CalendarModule.setToday()">Hoje</button>
+      </div>
+
+      <!-- Widget Calendário -->
+      <div class="calendar-widget">
+        <div class="calendar-header">
+          <button type="button" class="btn-icon-header" onclick="CalendarModule.changeMonth(-1)">◀</button>
+          <div class="calendar-month-title" id="calendar_current_month_title">Mês</div>
+          <button type="button" class="btn-icon-header" onclick="CalendarModule.changeMonth(1)">▶</button>
+        </div>
+
+        <div class="calendar-grid">
+          <div class="calendar-weekday">Dom</div>
+          <div class="calendar-weekday">Seg</div>
+          <div class="calendar-weekday">Ter</div>
+          <div class="calendar-weekday">Qua</div>
+          <div class="calendar-weekday">Qui</div>
+          <div class="calendar-weekday">Sex</div>
+          <div class="calendar-weekday">Sáb</div>
+        </div>
+        <div class="calendar-grid" id="calendar_days_grid">
+          <!-- Dias gerados via JS -->
+        </div>
+
+        <div style="display: flex; justify-content: center; gap: 14px; margin-top: 12px; font-size: 0.7rem; color: var(--text-muted);">
+          <span style="display:flex; align-items:center; gap:4px;"><span class="dot-indicator dot-expense"></span> Contas a pagar</span>
+          <span style="display:flex; align-items:center; gap:4px;"><span class="dot-indicator dot-event"></span> Festas/Receitas</span>
+          <span style="display:flex; align-items:center; gap:4px;"><span class="dot-indicator dot-task"></span> Compromissos</span>
+        </div>
+      </div>
+
+      <!-- Detalhes do Dia Selecionado -->
+      <div class="card">
+        <div class="card-title">
+          <span id="selected_day_title">Atividades do Dia</span>
+        </div>
+        <div id="selected_day_tasks_list" class="items-list">
+          <!-- Tarefas do dia -->
+        </div>
+      </div>
+    </section>
+
+    <!-- --------------------------------------------------------------------
+         5. TELA DE INVESTIMENTOS & EDUCAÇÃO
+         -------------------------------------------------------------------- -->
+    <section id="screen_investments" class="screen-view">
+      <div class="subtabs-bar">
+        <button type="button" class="subtab-btn active" data-tab="tab_inv_carteira" onclick="InvestmentsModule.switchTab('tab_inv_carteira')">Carteira</button>
+        <button type="button" class="subtab-btn" data-tab="tab_inv_reserva" onclick="InvestmentsModule.switchTab('tab_inv_reserva')">Reserva</button>
+        <button type="button" class="subtab-btn" data-tab="tab_inv_simulador" onclick="InvestmentsModule.switchTab('tab_inv_simulador')">Simulador</button>
+        <button type="button" class="subtab-btn" data-tab="tab_inv_perfil" onclick="InvestmentsModule.switchTab('tab_inv_perfil')">Perfil de Risco</button>
+        <button type="button" class="subtab-btn" data-tab="tab_inv_educativo" onclick="InvestmentsModule.switchTab('tab_inv_educativo')">Guia Educativo</button>
+      </div>
+
+      <!-- Subtab Carteira -->
+      <div id="tab_inv_carteira" class="subtab-content active">
+        <div class="hero-balance-card" style="padding: 16px; margin-bottom: 14px;">
+          <div class="hero-balance-label">TOTAL INVESTIDO REGISTRADO</div>
+          <div class="hero-balance-amount text-info" id="portfolio_total_applied" style="margin: 4px 0 10px 0;">R$ 0,00</div>
+          <button type="button" class="btn btn-sm btn-primary btn-block" onclick="App.openModal('modal_new_investment')">
+            + Cadastrar Aplicação
+          </button>
+        </div>
+
+        <div id="portfolio_items_list" class="items-list">
+          <!-- Lista de investimentos -->
+        </div>
+      </div>
+
+      <!-- Subtab Reserva de Emergência -->
+      <div id="tab_inv_reserva" class="subtab-content">
+        <div class="card">
+          <div class="card-title">Simulador de Reserva de Emergência</div>
+          <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 12px;">
+            A reserva garante sua tranquilidade financeira em imprevistos. O ideal é manter de 3 a 12 meses do seu custo de vida essencial guardados em investimentos com liquidez diária.
+          </p>
+
+          <div class="form-group">
+            <label class="form-label">Meu Custo Essencial Mensal (R$):</label>
+            <input type="number" step="0.01" id="emergency_monthly_cost_input" class="form-control" placeholder="Ex: 1500.00" oninput="this.dataset.customized = 'true'; InvestmentsModule.renderEmergencyFundSimulator()">
+          </div>
+        </div>
+
+        <div id="emergency_fund_results">
+          <!-- Resultados 3, 6 e 12 meses -->
+        </div>
+      </div>
+
+      <!-- Subtab Simulador de Juros Compostos -->
+      <div id="tab_inv_simulador" class="subtab-content">
+        <div class="card">
+          <div class="card-title">Simulador de Juros Compostos</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Valor Inicial (R$):</label>
+              <input type="number" step="0.01" id="sim_initial_amount" class="form-control" value="1000.00" oninput="InvestmentsModule.runInvestmentSimulation()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Aporte Mensal (R$):</label>
+              <input type="number" step="0.01" id="sim_monthly_amount" class="form-control" value="200.00" oninput="InvestmentsModule.runInvestmentSimulation()">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Prazo (Meses):</label>
+              <input type="number" id="sim_period_months" class="form-control" value="24" oninput="InvestmentsModule.runInvestmentSimulation()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Taxa Estimada (% a.a.):</label>
+              <input type="number" step="0.1" id="sim_annual_rate" class="form-control" value="10.5" oninput="InvestmentsModule.runInvestmentSimulation()">
+            </div>
+          </div>
+
+          <!-- Canvas do Gráfico -->
+          <div class="chart-container">
+            <canvas id="simulation_chart_canvas" class="native-chart"></canvas>
+            <div class="chart-legend">
+              <div class="legend-item"><span class="legend-color" style="background:#64748B;"></span> Total Investido</div>
+              <div class="legend-item"><span class="legend-color" style="background:#10B981;"></span> Saldo com Juros</div>
+            </div>
+          </div>
+
+          <div class="week-summary-box" style="margin-top: 12px;">
+            <div class="summary-stat-line"><span>Total Desembolsado:</span><strong id="sim_result_invested">R$ 0,00</strong></div>
+            <div class="summary-stat-line"><span>Rendimentos Estimados:</span><strong class="text-success" id="sim_result_interest">R$ 0,00</strong></div>
+            <div class="summary-stat-line total-line"><span>Valor Final Acumulado:</span><span id="sim_result_final">R$ 0,00</span></div>
+          </div>
+          <div style="font-size: 0.7rem; color: var(--text-muted); text-align: center;">
+            * Simulação ilustrativa com capitalização composta mensal.
+          </div>
+        </div>
+      </div>
+
+      <!-- Subtab Perfil de Risco -->
+      <div id="tab_inv_perfil" class="subtab-content">
+        <div class="card">
+          <div class="card-title">Questionário de Perfil Financeiro</div>
+          <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 14px;">
+            Descubra sua tolerância a risco e receba orientações educativas sobre os melhores caminhos para suas finanças.
+          </p>
+
+          <form id="quiz_form" onsubmit="event.preventDefault(); InvestmentsModule.calculateRiskProfile();">
+            <div class="form-group">
+              <label class="form-label">1. Por quanto tempo pretende manter o dinheiro investido?</label>
+              <label><input type="radio" name="quiz_q1" value="1" checked> Menos de 1 ano</label><br>
+              <label><input type="radio" name="quiz_q1" value="2"> De 1 a 3 anos</label><br>
+              <label><input type="radio" name="quiz_q1" value="3"> Mais de 3 anos</label>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">2. Qual é a sua prioridade principal ao investir?</label>
+              <label><input type="radio" name="quiz_q2" value="1" checked> Segurança total e garantia de não perder nada</label><br>
+              <label><input type="radio" name="quiz_q2" value="2"> Ganhar um pouco mais que a poupança com segurança</label><br>
+              <label><input type="radio" name="quiz_q2" value="3"> Maximizar rendimentos no longo prazo, mesmo com oscilações</label>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">3. Se seus investimentos caírem 10% em um mês de crise, o que você faz?</label>
+              <label><input type="radio" name="quiz_q3" value="1" checked> Resgato tudo imediatamente com medo de perder mais</label><br>
+              <label><input type="radio" name="quiz_q3" value="2"> Mantenho a calma e aguardo a recuperação do mercado</label><br>
+              <label><input type="radio" name="quiz_q3" value="3"> Aproveito os preços baixos para comprar mais</label>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">4. Qual é o seu nível de conhecimento sobre o mercado financeiro?</label>
+              <label><input type="radio" name="quiz_q4" value="1" checked> Iniciante (apenas poupança ou contas correntes)</label><br>
+              <label><input type="radio" name="quiz_q4" value="2"> Intermediário (conheço CDB, Tesouro e LCIs)</label><br>
+              <label><input type="radio" name="quiz_q4" value="3"> Avançado (já conheço ações, fundos imobiliários e ETFs)</label>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">5. Você já possui uma reserva de emergência constituída?</label>
+              <label><input type="radio" name="quiz_q5" value="1" checked> Não, estou começando agora</label><br>
+              <label><input type="radio" name="quiz_q5" value="2"> Parcialmente (1 a 2 meses de despesas)</label><br>
+              <label><input type="radio" name="quiz_q5" value="3"> Sim, completa (6 meses ou mais guardados)</label>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">6. Qual porcentagem da sua renda você consegue economizar por mês?</label>
+              <label><input type="radio" name="quiz_q6" value="1" checked> Até 10% da renda</label><br>
+              <label><input type="radio" name="quiz_q6" value="2"> Entre 10% e 25% da renda</label><br>
+              <label><input type="radio" name="quiz_q6" value="3"> Acima de 25% da renda</label>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">7. Sua renda mensal principal é estável ou variável?</label>
+              <label><input type="radio" name="quiz_q7" value="1" checked> Variável / Autônomo com eventos semanais</label><br>
+              <label><input type="radio" name="quiz_q7" value="2"> Mista (salário base + eventos extras)</label><br>
+              <label><input type="radio" name="quiz_q7" value="3"> Totalmente fixa e estável</label>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Avaliar Meu Perfil</button>
+          </form>
+
+          <div id="quiz_result_box" style="display: none;"></div>
+        </div>
+      </div>
+
+      <!-- Subtab Guia Educativo -->
+      <div id="tab_inv_educativo" class="subtab-content">
+        <div class="card">
+          <div class="card-title">Biblioteca Educativa Financeira</div>
+          <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 12px;">
+            Clique nos tópicos para compreender o funcionamento, tributação, liquidez, riscos, vantagens e desvantagens de cada modalidade.
+          </p>
+        </div>
+
+        <div id="educational_cards_container">
+          <!-- Renderizado via JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- --------------------------------------------------------------------
+         6. TELA DE RELATÓRIOS
+         -------------------------------------------------------------------- -->
+    <section id="screen_reports" class="screen-view">
+      <!-- Filtros de Período -->
+      <div class="subtabs-bar">
+        <button type="button" class="subtab-btn report-filter-btn" data-filter="day" onclick="ReportsModule.setFilter('day')">Hoje</button>
+        <button type="button" class="subtab-btn report-filter-btn" data-filter="week" onclick="ReportsModule.setFilter('week')">Semana</button>
+        <button type="button" class="subtab-btn report-filter-btn active" data-filter="month" onclick="ReportsModule.setFilter('month')">Mês</button>
+        <button type="button" class="subtab-btn report-filter-btn" data-filter="year" onclick="ReportsModule.setFilter('year')">Ano</button>
+        <button type="button" class="subtab-btn report-filter-btn" data-filter="custom" onclick="ReportsModule.setFilter('custom')">Personalizado</button>
+      </div>
+
+      <div id="report_custom_dates_row" class="form-row" style="display: none; margin-bottom: 12px;">
+        <div class="form-group">
+          <label class="form-label">Data Início:</label>
+          <input type="date" id="report_custom_start" class="form-control" onchange="ReportsModule.renderReports()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Data Fim:</label>
+          <input type="date" id="report_custom_end" class="form-control" onchange="ReportsModule.renderReports()">
+        </div>
+      </div>
+
+      <!-- Resumo Numérico do Período -->
+      <div class="metrics-grid">
+        <div class="metric-box">
+          <span class="metric-label">Receitas Recebidas</span>
+          <span class="metric-value text-success" id="report_received_total">R$ 0,00</span>
+        </div>
+        <div class="metric-box">
+          <span class="metric-label">Receitas Pendentes</span>
+          <span class="metric-value text-warning" id="report_pending_income_total">R$ 0,00</span>
+        </div>
+        <div class="metric-box">
+          <span class="metric-label">Total Gasto (Pago)</span>
+          <span class="metric-value text-danger" id="report_paid_expenses_total">R$ 0,00</span>
+        </div>
+        <div class="metric-box">
+          <span class="metric-label">Contas a Pagar</span>
+          <span class="metric-value text-warning" id="report_pending_expenses_total">R$ 0,00</span>
+        </div>
+        <div class="metric-box">
+          <span class="metric-label">Total em Metas</span>
+          <span class="metric-value text-purple" id="report_goals_saved_total">R$ 0,00</span>
+        </div>
+        <div class="metric-box">
+          <span class="metric-label">Total na Carteira</span>
+          <span class="metric-value text-info" id="report_invested_total">R$ 0,00</span>
+        </div>
+        <div class="metric-box" style="grid-column: span 2;">
+          <span class="metric-label">Patrimônio Geral Registrado</span>
+          <span class="metric-value text-success" id="report_net_worth_total" style="font-size: 1.25rem;">R$ 0,00</span>
+        </div>
+      </div>
+
+      <!-- Gráfico Donut de Despesas por Categoria -->
+      <div class="card">
+        <div class="card-title">Gastos por Categoria</div>
+        <div class="chart-container">
+          <canvas id="report_donut_canvas" class="native-chart"></canvas>
+          <div id="report_donut_legend" class="chart-legend"></div>
+        </div>
+      </div>
+
+      <!-- Gráfico de Barras Entradas x Saídas -->
+      <div class="card">
+        <div class="card-title">Entradas x Saídas</div>
+        <div class="chart-container">
+          <canvas id="report_bar_canvas" class="native-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- Exportação CSV -->
+      <div style="margin-top: 14px;">
+        <button type="button" class="btn btn-primary btn-block" onclick="ReportsModule.exportCSVReport()">
+          📥 Exportar Relatório em Planilha CSV
+        </button>
+      </div>
+    </section>
+
+    <!-- --------------------------------------------------------------------
+         7. TELA DE MEUS BACKUPS & DADOS
+         -------------------------------------------------------------------- -->
+    <section id="screen_backup" class="screen-view">
+      <div class="card card-highlight">
+        <div style="font-size: 0.95rem; font-weight: 700; color: #38BDF8; margin-bottom: 8px;">
+          💾 Gerenciamento de Backups Locais
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 12px;">
+          O GranaFlow opera 100% offline no seu dispositivo sem depender de nuvem ou assinaturas. Se você desinstalar o APK ou limpar o cache do celular, os dados podem ser perdidos. Por isso, <strong>baixe backups com frequência</strong>.
+        </p>
+
+        <div id="backup_storage_stats" style="margin-bottom: 16px; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px;">
+          <!-- Estatísticas geradas via JS -->
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <button type="button" class="btn btn-primary btn-block" onclick="BackupModule.downloadBackupJSON()">
+            ⬇️ Baixar Arquivo de Backup Completo (JSON)
+          </button>
+
+          <label class="btn btn-outline btn-block" style="cursor: pointer; margin: 0;">
+            ⬆️ Restaurar Backup (JSON)
+            <input type="file" id="import_backup_file_input" accept=".json" style="display: none;" onchange="BackupModule.importBackupJSON(this.files[0])">
+          </label>
+
+          <button type="button" class="btn btn-outline btn-block" onclick="ReportsModule.exportCSVReport()">
+            📄 Exportar Todos os Lançamentos em CSV
+          </button>
+        </div>
+      </div>
+
+      <div class="card" style="border-color: rgba(239, 68, 68, 0.4);">
+        <div class="card-title" style="color: var(--danger);">Zona de Segurança</div>
+        <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 12px;">
+          Deseja recomeçar do zero? Esta ação apagará todos os registros armazenados no dispositivo.
+        </p>
+        <button type="button" class="btn btn-danger-outline btn-block" onclick="BackupModule.wipeAllData()">
+          ⚠️ Limpar Todos os Meus Registros
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ======================================================================
+       BOTTOM NAVIGATION BAR (5 ÁREAS PRINCIPAIS)
+       ====================================================================== -->
+  <nav class="bottom-nav">
+    <button type="button" class="nav-item active" data-screen="dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+      <span>Início</span>
+    </button>
+
+    <button type="button" class="nav-item" data-screen="events">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+      </svg>
+      <span>Receitas</span>
+    </button>
+
+    <button type="button" class="nav-item" data-screen="expenses">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>
+      </svg>
+      <span>Despesas</span>
+    </button>
+
+    <button type="button" class="nav-item" data-screen="calendar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>
+      </svg>
+      <span>Agenda</span>
+    </button>
+
+    <button type="button" class="nav-item" data-screen="investments">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
+      </svg>
+      <span>Investir</span>
+    </button>
+  </nav>
+
+  <!-- ======================================================================
+       MODAIS DA APLICAÇÃO
+       ====================================================================== -->
+
+  <!-- Modal 1: Novo Evento / Receita -->
+  <div id="modal_new_event" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Registrar Evento / Festa</h3>
+        <button type="button" class="btn-close-modal" onclick="App.closeModal('modal_new_event')">✕</button>
+      </div>
+      <form id="form_new_event">
+        <div class="form-group">
+          <label class="form-label">Tipo de Festa:</label>
+          <select id="event_form_type" class="form-control" onchange="var isCust = this.value === 'custom'; document.getElementById('event_custom_val_group').style.display = isCust ? 'block' : 'none';">
+            <option value="normal">Festa Normal (Padrão R$ 100,00)</option>
+            <option value="solo">Festa Solo (Padrão R$ 150,00)</option>
+            <option value="custom">Outro Valor / Personalizado</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="event_custom_val_group" style="display: none;">
+          <label class="form-label">Valor Individual (R$):</label>
+          <input type="number" step="0.01" id="event_form_custom_val" class="form-control" placeholder="100.00">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Quantidade de Festas:</label>
+            <input type="number" id="event_form_qty" class="form-control" value="1" min="1" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Data:</label>
+            <input type="date" id="event_form_date" class="form-control" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Nome / Descrição (Opcional):</label>
+          <input type="text" id="event_form_name" class="form-control" placeholder="Ex: Festa Infantil Buffet X">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Situação:</label>
+          <select id="event_form_status" class="form-control">
+            <option value="pending" selected>A receber (Pendente)</option>
+            <option value="received">Recebido (Entra no Saldo)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Observações:</label>
+          <textarea id="event_form_notes" class="form-control" rows="2" placeholder="Ex: Contratante João, pagamento via Pix"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block">Salvar Evento</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 2: Nova Despesa -->
+  <div id="modal_new_expense" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Lançar Despesa</h3>
+        <button type="button" class="btn-close-modal" onclick="App.closeModal('modal_new_expense')">✕</button>
+      </div>
+      <form id="form_new_expense">
+        <div class="form-group">
+          <label class="form-label">Descrição da Despesa:</label>
+          <input type="text" id="expense_form_name" class="form-control" placeholder="Ex: Almoço, Uber, Mercado" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Valor (R$):</label>
+            <input type="number" step="0.01" id="expense_form_amount" class="form-control" placeholder="25.00" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Data:</label>
+            <input type="date" id="expense_form_date" class="form-control" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Categoria:</label>
+            <select id="expense_category_select" class="form-control" required>
+              <!-- Preenchido dinamicamente -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Pagamento:</label>
+            <select id="expense_form_payment" class="form-control">
+              <option value="Pix">Pix</option>
+              <option value="Dinheiro">Dinheiro</option>
+              <option value="Cartão Débito">Cartão Débito</option>
+              <option value="Cartão Crédito">Cartão Crédito</option>
+              <option value="Boleto">Boleto</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Tipo de Despesa:</label>
+            <select id="expense_form_type" class="form-control">
+              <option value="variable">Variável</option>
+              <option value="fixed">Fixa</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Status do Pagamento:</label>
+            <select id="expense_form_status" class="form-control">
+              <option value="paid" selected>Paga (Desconta agora)</option>
+              <option value="pending">Pendente (Compromisso)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Observações:</label>
+          <input type="text" id="expense_form_notes" class="form-control" placeholder="Opcional">
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block">Salvar Despesa</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 3: Nova Despesa Fixa Recorrente -->
+  <div id="modal_new_fixed_expense" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Configurar Conta Recorrente</h3>
+        <button type="button" class="btn-close-modal" onclick="App.closeModal('modal_new_fixed_expense')">✕</button>
+      </div>
+      <form id="form_new_fixed_expense">
+        <div class="form-group">
+          <label class="form-label">Nome da Conta:</label>
+          <input type="text" id="fixed_expense_name" class="form-control" placeholder="Ex: Aluguel, Plano Celular, Academia" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Valor (R$):</label>
+            <input type="number" step="0.01" id="fixed_expense_amount" class="form-control" placeholder="100.00" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Dia do Vencimento:</label>
+            <input type="number" id="fixed_expense_due_day" class="form-control" min="1" max="31" value="10" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Categoria:</label>
+          <select id="fixed_expense_category_select" class="form-control">
+            <!-- Preenchido dinamicamente -->
+          </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block">Cadastrar Recorrência</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 4: Nova Tarefa na Agenda -->
+  <div id="modal_new_task" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Novo Compromisso / Lembrete</h3>
+        <button type="button" class="btn-close-modal" onclick="App.closeModal('modal_new_task')">✕</button>
+      </div>
+      <form id="form_new_task">
+        <div class="form-group">
+          <label class="form-label">Título:</label>
+          <input type="text" id="task_form_title" class="form-control" placeholder="Ex: Comprar suprimentos, Ligar cliente" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Data:</label>
+            <input type="date" id="task_form_date" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Horário:</label>
+            <input type="time" id="task_form_time" class="form-control">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Categoria:</label>
+            <select id="task_form_category" class="form-control">
+              <option value="Trabalho">Trabalho</option>
+              <option value="Eventos">Eventos</option>
+              <option value="Financeiro">Financeiro (Pagar/Receber)</option>
+              <option value="Estudos">Estudos</option>
+              <option value="Pessoal">Pessoal</option>
+              <option value="Outros">Outros</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Prioridade:</label>
+            <select id="task_form_priority" class="form-control">
+              <option value="high">Alta Prioridade</option>
+              <option value="medium" selected>Média</option>
+              <option value="low">Baixa</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Lembrete no App:</label>
+          <select id="task_form_reminder" class="form-control">
+            <option value="yes" selected>Sim (Exibir alertas nos cards)</option>
+            <option value="no">Não</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Descrição (Opcional):</label>
+          <textarea id="task_form_desc" class="form-control" rows="2"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block">Salvar na Agenda</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 5: Nova Meta Financeira -->
+  <div id="modal_new_goal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Nova Meta Financeira</h3>
+        <button type="button" class="btn-close-modal" onclick="App.closeModal('modal_new_goal')">✕</button>
+      </div>
+      <form id="form_new_goal">
+        <div class="form-group">
+          <label class="form-label">Objetivo:</label>
+          <input type="text" id="goal_form_name" class="form-control" placeholder="Ex: Celular Novo, Viagem, Computador" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Valor Alvo (R$):</label>
+            <input type="number" step="0.01" id="goal_form_target" class="form-control" placeholder="2000.00" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Já Guardado (R$):</label>
+            <input type="number" step="0.01" id="goal_form_saved" class="form-control" placeholder="0.00">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Prazo Estimado:</label>
+            <input type="date" id="goal_form_deadline" class="form-control">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Prioridade:</label>
+            <select id="goal_form_priority" class="form-control">
+              <option value="high">Alta</option>
+              <option value="medium" selected>Média</option>
+              <option value="low">Baixa</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Descrição / Motivação:</label>
+          <input type="text" id="goal_form_desc" class="form-control" placeholder="Opcional">
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block">Salvar Meta</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 6: Novo Investimento -->
+  <div id="modal_new_investment" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Cadastrar Aplicação na Carteira</h3>
+        <button type="button" class="btn-close-modal" onclick="App.closeModal('modal_new_investment')">✕</button>
+      </div>
+      <form id="form_new_investment">
+        <div class="form-group">
+          <label class="form-label">Nome do Ativo / Investimento:</label>
+          <input type="text" id="inv_form_name" class="form-control" placeholder="Ex: CDB Banco Inter 100% CDI, Tesouro Selic 2029" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Instituição / Corretora:</label>
+            <input type="text" id="inv_form_institution" class="form-control" placeholder="Ex: Nubank, Inter, XP" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Valor Aplicado (R$):</label>
+            <input type="number" step="0.01" id="inv_form_amount" class="form-control" placeholder="500.00" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Data da Aplicação:</label>
+            <input type="date" id="inv_form_date" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Rentabilidade:</label>
+            <input type="text" id="inv_form_yield" class="form-control" placeholder="Ex: 100% do CDI, IPCA+ 6%">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Liquidez:</label>
+          <select id="inv_form_liquidity" class="form-control">
+            <option value="Diária / Imediata">Diária / Imediata (Serve para Reserva)</option>
+            <option value="D+1">D+1 (1 dia útil)</option>
+            <option value="No Vencimento">No Vencimento (Prazo Fechado)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Observações:</label>
+          <input type="text" id="inv_form_notes" class="form-control" placeholder="Opcional">
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block">Registrar Aplicação</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 7: Nova Categoria Personalizada -->
+  <div id="modal_new_category" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Nova Categoria</h3>
+        <button type="button" class="btn-close-modal" onclick="App.closeModal('modal_new_category')">✕</button>
+      </div>
+      <form onsubmit="event.preventDefault(); ExpensesModule.addCustomCategory(document.getElementById('cat_name_input').value, document.getElementById('cat_icon_input').value, document.getElementById('cat_color_input').value).then(() => App.closeModal('modal_new_category'));">
+        <div class="form-group">
+          <label class="form-label">Nome da Categoria:</label>
+          <input type="text" id="cat_name_input" class="form-control" placeholder="Ex: Jogos, Pet shop, Viagens" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Ícone / Emoji:</label>
+            <input type="text" id="cat_icon_input" class="form-control" value="🏷️" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Cor:</label>
+            <input type="color" id="cat_color_input" class="form-control" value="#8B5CF6" style="height: 44px; padding: 4px;">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Salvar Categoria</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 8: Configurar Valores Padrão das Festas -->
+  <div id="modal_config_event_prices" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Configurar Valores das Festas</h3>
+        <button type="button" class="btn-close-modal" onclick="App.closeModal('modal_config_event_prices')">✕</button>
+      </div>
+      <form onsubmit="event.preventDefault(); var n = AppFinance.toCents(document.getElementById('cfg_val_normal').value); var s = AppFinance.toCents(document.getElementById('cfg_val_solo').value); EventsModule.saveUnitValues(n, s).then(() => App.closeModal('modal_config_event_prices'));">
+        <div class="form-group">
+          <label class="form-label">Valor da Festa Normal (R$):</label>
+          <input type="number" step="0.01" id="cfg_val_normal" class="form-control" value="100.00" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Valor da Festa Solo (R$):</label>
+          <input type="number" step="0.01" id="cfg_val_solo" class="form-control" value="150.00" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Atualizar Preços</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       TELA DE BLOQUEIO POR PIN (OPCIONAL)
+       ====================================================================== -->
+  <div id="pin_lock_screen" class="pin-lock-overlay" style="display: none;">
+    <img src="./assets/logo.png" style="width: 56px; height: 56px; border-radius: 14px; margin-bottom: 12px;" alt="Logo">
+    <h2 style="font-size: 1.15rem; font-weight: 700; color: #FFFFFF;">GranaFlow Protegido</h2>
+    <p style="font-size: 0.78rem; color: var(--text-muted);">Digite seu PIN de 4 dígitos para acessar</p>
+
+    <div class="pin-dots">
+      <div class="pin-dot" id="pin_dot_1"></div>
+      <div class="pin-dot" id="pin_dot_2"></div>
+      <div class="pin-dot" id="pin_dot_3"></div>
+      <div class="pin-dot" id="pin_dot_4"></div>
+    </div>
+
+    <div class="pin-pad">
+      <button type="button" class="pin-btn" onclick="App.handlePinInput('1')">1</button>
+      <button type="button" class="pin-btn" onclick="App.handlePinInput('2')">2</button>
+      <button type="button" class="pin-btn" onclick="App.handlePinInput('3')">3</button>
+      <button type="button" class="pin-btn" onclick="App.handlePinInput('4')">4</button>
+      <button type="button" class="pin-btn" onclick="App.handlePinInput('5')">5</button>
+      <button type="button" class="pin-btn" onclick="App.handlePinInput('6')">6</button>
+      <button type="button" class="pin-btn" onclick="App.handlePinInput('7')">7</button>
+      <button type="button" class="pin-btn" onclick="App.handlePinInput('8')">8</button>
+      <button type="button" class="pin-btn" onclick="App.handlePinInput('9')">9</button>
+      <div></div>
+      <button type="button" class="pin-btn" onclick="App.handlePinInput('0')">0</button>
+      <button type="button" class="pin-btn" onclick="App.handlePinBackspace()">⌫</button>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="app_toast_container" class="toast-container"></div>
+
+  <!-- Registro do Service Worker (modo offline / PWA) -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('./sw.js').catch(function (err) {
+          console.warn('Service Worker não registrado:', err);
+        });
+      });
+    }
+  </script>
+
+</body>
+</html>

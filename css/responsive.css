@@ -1,0 +1,100 @@
+/* ==========================================================================
+   GRANAFLOW — RESPONSIVIDADE E AJUSTES DE TELA MÓVEL (ANDROID)
+   ========================================================================== */
+
+/* Suporte para Safe Area Insets (Entalhes e barra de gestos do Android) */
+@supports (padding: max(0px)) {
+  .app-header {
+    padding-top: max(0px, env(safe-area-inset-top));
+    height: calc(var(--header-height) + env(safe-area-inset-top));
+  }
+
+  .app-content {
+    padding-top: calc(var(--header-height) + env(safe-area-inset-top) + 12px);
+    padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom) + 24px);
+  }
+
+  .bottom-nav {
+    padding-bottom: max(6px, env(safe-area-inset-bottom));
+    height: calc(var(--nav-height) + env(safe-area-inset-bottom));
+  }
+}
+
+/* Telas pequenas (Smartphones compactos: até 380px) */
+@media (max-width: 380px) {
+  .hero-balance-amount {
+    font-size: 1.75rem;
+  }
+  
+  .safe-spend-value {
+    font-size: 1.55rem;
+  }
+  
+  .metric-value {
+    font-size: 0.98rem;
+  }
+  
+  .day-label {
+    width: 75px;
+    font-size: 0.78rem;
+  }
+
+  .stepper-val {
+    width: 22px;
+  }
+
+  .stepper-btn {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .nav-item span {
+    font-size: 0.62rem;
+  }
+}
+
+/* Telas Maiores / Tablets / Navegadores Desktop (para visualização no PC) */
+@media (min-width: 640px) {
+  .modal-overlay {
+    align-items: center;
+    padding: 20px;
+  }
+
+  .modal-card {
+    border-radius: var(--radius-lg);
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  .metrics-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .app-content {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}
+
+/* Melhorias de Usabilidade para Toque */
+button, input, select, textarea {
+  touch-action: manipulation;
+}
+
+/* Prevenção de overflow e rolagem fluida */
+.scrollable-area {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
+}
+
+.scrollable-area::-webkit-scrollbar {
+  width: 4px;
+}
+.scrollable-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollable-area::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
